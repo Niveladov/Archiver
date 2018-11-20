@@ -29,6 +29,7 @@ namespace archiver
             // поток для чтения исходного файла
             using (FileStream sourceStream = new FileStream(sourceFile, FileMode.OpenOrCreate))
             {
+                var fileLength = sourceStream.Length;
                 // поток для записи сжатого файла
                 using (FileStream targetStream = File.Create(compressedFile))
                 {
