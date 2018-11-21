@@ -10,12 +10,17 @@ namespace archiver
 {
     class Program
     {
-        static ProducerConsumer queueIn = new ProducerConsumer();
-        static ProducerConsumer queueOut = new ProducerConsumer();
-        static string sourceFile = @"F:/MyProjects/models.cs"; // исходный файл
-        static string compressedFile = @"F:/MyProjects/models.gz"; // сжатый файл
-        static string targetFile = @"F:/MyProjects/models_new.cs"; // восстановленный файл
+        static ProducerConsumer _queueIn = new ProducerConsumer();
+        static ProducerConsumer _queueOut = new ProducerConsumer();
+        static string _sourceFile = @"F:/MyProjects/models.cs"; // исходный файл
+        static string _compressedFile = @"F:/MyProjects/models.gz"; // сжатый файл
+        static string _targetFile = @"F:/MyProjects/models_new.cs"; // восстановленный файл
+
+        //static string sourceFile = @"F:/MyProjects/models.cs"; // исходный файл
+        //static string compressedFile = @"F:/MyProjects/models.gz"; // сжатый файл
+        //static string targetFile = @"F:/MyProjects/models_new.cs"; // восстановленный файл
         static int _pocessorCount = Environment.ProcessorCount;
+        static bool _isCancel = false;
 
         private static void Main(string[] args)
         {
@@ -27,6 +32,7 @@ namespace archiver
         {
             var readingThread = new Thread(ReadFromFile);
             readingThread.Start();
+            Console.WriteLine("Погнали!!!♦♦♦♦♦");
 
             var threadPool = new Thread[_pocessorCount];
             for (int i = 0; i < _pocessorCount; i++)
@@ -35,11 +41,19 @@ namespace archiver
                 threadPool[i].Start();
             }
 
+            Console.WriteLine("Ждём-с!!!");
             threadPool.WaitAll();
-            //readingThread.Join();
 
-            var writingThread = new Thread(WriteToFile);
-            writingThread.Start();
+            _queueOut.Stop();
+
+            WriteToFile();
+            //var writingThread = new Thread(WriteToFile);
+            //writingThread.Start();
+            //writingThread.Join();
+
+            Console.WriteLine("Усё!!!");
+
+            //readingThread.Join();
 
             //qqqqqqqqq.Stop();
         }
@@ -49,17 +63,17 @@ namespace archiver
         {
             try
             {
-                using (FileStream sourceStream = new FileStream(sourceFile, FileMode.OpenOrCreate))
+                using (FileStream sourceStream = new FileStream(_sourceFile, FileMode.OpenOrCreate))
                 {
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[sourceStream.Length % 1000000];
                     int dataLength;
-                    int blockId = 1;
                     while (sourceStream.Position < sourceStream.Length)
                     {
                         dataLength = sourceStream.Read(buffer, 0, buffer.Length);
-                        var block = new Block(blockId, buffer);
-                        queueIn.Enqueue(block);
+                        _queueIn.Enqueue(buffer);
+                        buffer = new byte[1000000];
                     }
+                    _queueIn.Stop();
                 }
             }
             catch (Exception ex)
@@ -72,16 +86,19 @@ namespace archiver
         {
             try
             {
-                var blockIn = queueIn.Dequeue();
-                if (blockIn == null) return;
-                using (var memoryStream = new MemoryStream())
+                while (!_isCancel)
                 {
-                    using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+                    var blockIn = _queueIn.Dequeue();
+                    if (blockIn == null) return;
+                    using (var memoryStream = new MemoryStream())
                     {
-                        gZipStream.Write(blockIn.Buffer, 0, blockIn.Buffer.Length);
-                        var bytes = memoryStream.ToArray();
-                        var blockOut = new Block(blockIn.Id, bytes);
-                        queueOut.Enqueue(blockOut);
+                        using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+                        {
+                            gZipStream.Write(blockIn.Buffer, 0, blockIn.Buffer.Length);
+                            var bytes = memoryStream.ToArray();
+                            var blockOut = new Block(blockIn.Id, bytes);
+                            _queueOut.Enqueue(blockOut);
+                        }
                     }
                 }
             }
@@ -95,11 +112,14 @@ namespace archiver
         {
             try
             {
-                using (FileStream targetStream = File.Create(compressedFile))
+                using (FileStream targetStream = File.Create(_compressedFile))
                 {
-                    var block = queueOut.Dequeue();
-                    if (block == null) return;
-                    targetStream.Write(block.Buffer, 0, block.Buffer.Length);
+                    while (!_isCancel)
+                    {
+                        var block = _queueOut.Dequeue();
+                        if (block == null) return;
+                        targetStream.Write(block.Buffer, 0, block.Buffer.Length);
+                    }
                 }
             }
             catch (Exception ex)

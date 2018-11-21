@@ -21,23 +21,48 @@ namespace archiver
     public sealed class ProducerConsumer
     {
         private object _locker = new object();
-        private bool isStoped = false;
-        private Queue<Block> queue = new Queue<Block>();
+        private bool _isStoped = false;
+        private int _expectedBlockId = 1;
+        private Queue<Block> _queue = new Queue<Block>();
 
-        public void Enqueue(Block _block)
+        public void Enqueue(Block block)
         {
-            if (_block == null)
+            if (block == null)
             {
                 throw new ArgumentNullException("_block");
             }
             lock (_locker)
             {
-                if (isStoped)
+                if (_isStoped)
                 {
                     throw new InvalidOperationException("Queue already stopped");
                 }
-                queue.Enqueue(_block);
+                while (_expectedBlockId != block.Id)
+                {
+                    Monitor.Wait(_locker);
+                }
+                _queue.Enqueue(block);
                 Monitor.Pulse(_locker);
+                _expectedBlockId++;
+            }
+        }
+
+        public void Enqueue(byte[] buffer)
+        {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException("_block");
+            }
+            lock (_locker)
+            {
+                if (_isStoped)
+                {
+                    throw new InvalidOperationException("Queue already stopped");
+                }
+                var block = new Block(_expectedBlockId, buffer);
+                _queue.Enqueue(block);
+                Monitor.Pulse(_locker);
+                _expectedBlockId++;
             }
         }
 
@@ -45,17 +70,17 @@ namespace archiver
         {
             lock (_locker)
             {
-                while (queue.Count == 0 && !isStoped)
+                while (_queue.Count == 0 && !_isStoped)
                 {
                     Monitor.Wait(_locker);
                 }
 
-                if (queue.Count == 0)
+                if (_queue.Count == 0)
                 {
                     return null;
                 }
 
-                return queue.Dequeue();
+                return _queue.Dequeue();
             }
         }
 
@@ -63,7 +88,7 @@ namespace archiver
         {
             lock (_locker)
             {
-                isStoped = true;
+                _isStoped = true;
                 Monitor.PulseAll(_locker);
             }
         }
