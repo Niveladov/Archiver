@@ -12,13 +12,13 @@ namespace archiver
     {
         static ProducerConsumer _queueIn = new ProducerConsumer();
         static ProducerConsumer _queueOut = new ProducerConsumer();
-        static string _sourceFile = @"F:/MyProjects/models.cs"; // исходный файл
-        static string _compressedFile = @"F:/MyProjects/models.gz"; // сжатый файл
-        static string _targetFile = @"F:/MyProjects/models_new.cs"; // восстановленный файл
+        //static string _sourceFile = @"F:/MyProjects/models.cs"; // исходный файл
+        //static string _compressedFile = @"F:/MyProjects/models.gz"; // сжатый файл
+        //static string _targetFile = @"F:/MyProjects/models_new.cs"; // восстановленный файл
 
-        //static string sourceFile = @"F:/MyProjects/models.cs"; // исходный файл
-        //static string compressedFile = @"F:/MyProjects/models.gz"; // сжатый файл
-        //static string targetFile = @"F:/MyProjects/models_new.cs"; // восстановленный файл
+        static string _sourceFile = @"D:/Niveladov/models.txt"; // исходный файл
+        static string _compressedFile = @"D:/Niveladov/models.gz"; // сжатый файл
+        //static string _targetFile = @"D:/Niveladov/models_new.txt"; // восстановленный файл
         static int _pocessorCount = Environment.ProcessorCount;
         static bool _isCancel = false;
 

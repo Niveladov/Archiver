@@ -42,8 +42,8 @@ namespace archiver
                     Monitor.Wait(_locker);
                 }
                 _queue.Enqueue(block);
-                Monitor.Pulse(_locker);
                 _expectedBlockId++;
+                Monitor.PulseAll(_locker);
             }
         }
 
@@ -61,8 +61,8 @@ namespace archiver
                 }
                 var block = new Block(_expectedBlockId, buffer);
                 _queue.Enqueue(block);
-                Monitor.Pulse(_locker);
                 _expectedBlockId++;
+                Monitor.Pulse(_locker);
             }
         }
 
@@ -74,12 +74,7 @@ namespace archiver
                 {
                     Monitor.Wait(_locker);
                 }
-
-                if (_queue.Count == 0)
-                {
-                    return null;
-                }
-
+                if (_queue.Count == 0) return null;
                 return _queue.Dequeue();
             }
         }
