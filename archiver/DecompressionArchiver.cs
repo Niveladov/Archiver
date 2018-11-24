@@ -17,21 +17,24 @@ namespace archiver
             {
                 using (var sourceStream = new FileStream(sourceFile, FileMode.Open))
                 {
-                    var emptyBuffer = new byte[SYSTEM_DATA_START_POSITION];
-                    var systemDataLength = SYSTEM_DATA_START_POSITION + BitConverter.GetBytes(Int32.MaxValue).Length;
-                    var systemDataBuffer = new byte[systemDataLength];
+                    var lengthDataBuffer = new byte[4];
                     while (sourceStream.Position < sourceStream.Length)
                     {
-                        sourceStream.Read(systemDataBuffer, 0, systemDataLength);
-                        var blockLength = BitConverter.ToInt32(systemDataBuffer, SYSTEM_DATA_START_POSITION);
-                        var blockBuffer = new byte[blockLength];
+                        sourceStream.Read(lengthDataBuffer, 0, lengthDataBuffer.Length);
+                        var decomBufferLengthArray = lengthDataBuffer;
+                        var decomBufferLength = BitConverter.ToInt32(lengthDataBuffer, 0);
 
-                        systemDataBuffer.CopyTo(blockBuffer, 0);
-                        emptyBuffer.CopyTo(blockBuffer, SYSTEM_DATA_START_POSITION);
-                        sourceStream.Read(blockBuffer, systemDataLength, blockLength - systemDataLength);
+                        sourceStream.Read(lengthDataBuffer, 0, lengthDataBuffer.Length);
+                        var comBufferLength = BitConverter.ToInt32(lengthDataBuffer, 0);
+                        
+                        var buffer = new byte[comBufferLength];
+                        sourceStream.Read(buffer, 0, buffer.Length);
 
-                        var blockSize = BitConverter.ToInt32(blockBuffer, blockLength - 4);
-                        queueIn.Enqueue(blockBuffer);
+                        var comBuffer = new byte[decomBufferLengthArray.Length + buffer.Length];
+                        decomBufferLengthArray.CopyTo(comBuffer, 0);
+                        buffer.CopyTo(comBuffer, decomBufferLengthArray.Length);
+                        
+                        queueIn.Enqueue(comBuffer);
                     }
                     queueIn.Stop();
                 }
@@ -50,17 +53,16 @@ namespace archiver
                 {
                     var blockIn = queueIn.Dequeue();
                     if (blockIn == null) return;
-                    using (var memoryStream = new MemoryStream(blockIn.Buffer))
+                    var lengthDataBuffer = new byte[4];
+                    blockIn.Buffer.Take(4).ToArray().CopyTo(lengthDataBuffer, 0);
+                    var decomLength = BitConverter.ToInt32(lengthDataBuffer, 0);
+                    var decomBuffer = new byte[decomLength];
+                    using (var memoryStream = new MemoryStream(blockIn.Buffer.Skip(4).ToArray()))
                     {
                         using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
                         {
-                            var decompressBuffer = new byte[DATA_PORTION_SIZE];
-                            var bufferLength = gZipStream.Read(decompressBuffer, 0, DATA_PORTION_SIZE);
-                            //if (bufferLength != DATA_PORTION_SIZE)
-                            //{
-                            //    Array.Resize(ref decompressBuffer, bufferLength);
-                            //}
-                            var blockOut = new Block(blockIn.Id, decompressBuffer);
+                            var bufferLength = gZipStream.Read(decomBuffer, 0, decomLength);
+                            var blockOut = new Block(blockIn.Id, decomBuffer);
                             queueOut.Enqueue(blockOut);
                         }
                     }

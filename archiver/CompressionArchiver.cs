@@ -46,8 +46,14 @@ namespace archiver
                         using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
                         {
                             gZipStream.Write(blockIn.Buffer, 0, blockIn.Buffer.Length);
-                            var bytes = memoryStream.ToArray();
-                            var blockOut = new Block(blockIn.Id, bytes);
+                            var comBuffer = memoryStream.ToArray();
+                            var decomBufferLengthArray = BitConverter.GetBytes(blockIn.Buffer.Length);
+                            var comBufferLengthArray = BitConverter.GetBytes(comBuffer.Length);
+                            var fullBuffer = new byte[comBuffer.Length + comBufferLengthArray.Length + decomBufferLengthArray.Length];
+                            decomBufferLengthArray.CopyTo(fullBuffer, 0);
+                            comBufferLengthArray.CopyTo(fullBuffer, decomBufferLengthArray.Length);
+                            comBuffer.CopyTo(fullBuffer, decomBufferLengthArray.Length + comBufferLengthArray.Length);
+                            var blockOut = new Block(blockIn.Id, comBuffer);
                             queueOut.Enqueue(blockOut);
                         }
                     }
@@ -69,7 +75,7 @@ namespace archiver
                     {
                         var block = queueOut.Dequeue();
                         if (block == null) return;
-                        BitConverter.GetBytes(block.Buffer.Length).CopyTo(block.Buffer, SYSTEM_DATA_START_POSITION);
+                        //BitConverter.GetBytes(block.Buffer.Length).CopyTo(block.Buffer, SYSTEM_DATA_START_POSITION);
                         targetStream.Write(block.Buffer, 0, block.Buffer.Length);
                     }
                 }

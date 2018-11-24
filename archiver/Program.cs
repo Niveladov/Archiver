@@ -10,7 +10,7 @@ namespace archiver
 {
     class Program
     {
-        private static Archiver _archiver = new CompressionArchiver(@"F:/MyProjects/IMG.jpg", @"F:/MyProjects/IMG_NEW.gz");
+        private static Archiver _archiver = new DecompressionArchiver(@"F:/MyProjects/IMG.gz", @"F:/MyProjects/IMG_n.jpg");
         //protected string sourceFile { get; } = @"F:/MyProjects/models.cs";
         //protected string compressedFile { get; } = @"F:/MyProjects/models.gz";
         //protected string targetFile { get; } = @"F:/MyProjects/models_new.cs";
