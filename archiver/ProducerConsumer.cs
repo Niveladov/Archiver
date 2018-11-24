@@ -6,15 +6,32 @@ using System.Threading;
 
 namespace archiver
 {
+    public enum BlockState
+    {
+        Compressed,
+        Decompressed
+    }
+
     public sealed class Block
     {
         public int Id { get; }
         public byte[] Buffer { get; }
+        public byte[] SystemBuffer { get; } = new byte[8];
 
-        public Block(int id, byte[] buffer)
+
+        public Block(int id, byte[] buffer, BlockState state)
         {
             Id = id;
             Buffer = buffer;
+            switch (state)
+            {
+                case BlockState.Decompressed:
+                    break;
+                case BlockState.Compressed:
+                    break;
+                default:
+                    throw new Exception("Current block state doesn't exist!");
+            }
         }
     }
 

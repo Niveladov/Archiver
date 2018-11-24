@@ -48,14 +48,6 @@ namespace archiver
                             gZipStream.Write(blockIn.Buffer, 0, blockIn.Buffer.Length);
                             var bytes = memoryStream.ToArray();
                             var blockOut = new Block(blockIn.Id, bytes);
-                            using (var memoryStream2 = new MemoryStream(blockOut.Buffer))
-                            {
-                                using (var gZipStream2 = new GZipStream(memoryStream2, CompressionMode.Decompress))
-                                {
-                                    var decompressBuffer = new byte[DATA_PORTION_SIZE];
-                                    var bufferLength = gZipStream2.Read(decompressBuffer, 0, DATA_PORTION_SIZE);
-                                }
-                            }
                             queueOut.Enqueue(blockOut);
                         }
                     }
