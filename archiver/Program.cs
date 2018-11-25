@@ -13,7 +13,7 @@ namespace archiver
     {
         private const string COMPRESS_MODE = "compress";
         private const string DECOMPRESS_MODE = "decompress";
-        private const string FILENAME_PATTERN = @"\w+\";
+        private const string FILENAME_PATTERN = @"\w+\.\w+";
 
         private static string _mode;
         private static string _sourceFile;
@@ -32,6 +32,12 @@ namespace archiver
 
         private static void Main(string[] args)
         {
+#if DEBUG
+            args = new string[3];
+            args[0] = "decompress";
+            args[1] = @"F:/MyProjects/IMG.gz";
+            args[2] = @"F:/MyProjects/IMG_NEW.jpg";
+#endif
             if (args.Length == 3)
             {
                 _mode = args[0];
