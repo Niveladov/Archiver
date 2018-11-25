@@ -17,24 +17,23 @@ namespace archiver
             {
                 using (var sourceStream = new FileStream(sourceFile, FileMode.Open))
                 {
-                    var lengthDataBuffer = new byte[4];
+                    var decomLengthBuffer = new byte[4];
+                    var comLengthBuffer = new byte[4];
                     while (sourceStream.Position < sourceStream.Length)
                     {
-                        sourceStream.Read(lengthDataBuffer, 0, lengthDataBuffer.Length);
-                        var decomBufferLengthArray = lengthDataBuffer;
-                        var decomBufferLength = BitConverter.ToInt32(lengthDataBuffer, 0);
+                        sourceStream.Read(decomLengthBuffer, 0, decomLengthBuffer.Length);
 
-                        sourceStream.Read(lengthDataBuffer, 0, lengthDataBuffer.Length);
-                        var comBufferLength = BitConverter.ToInt32(lengthDataBuffer, 0);
+                        sourceStream.Read(comLengthBuffer, 0, comLengthBuffer.Length);
+                        var comBufferLength = BitConverter.ToInt32(comLengthBuffer, 0);
                         
-                        var buffer = new byte[comBufferLength];
-                        sourceStream.Read(buffer, 0, buffer.Length);
+                        var comBuffer = new byte[comBufferLength];
+                        sourceStream.Read(comBuffer, 0, comBuffer.Length);
 
-                        var comBuffer = new byte[decomBufferLengthArray.Length + buffer.Length];
-                        decomBufferLengthArray.CopyTo(comBuffer, 0);
-                        buffer.CopyTo(comBuffer, decomBufferLengthArray.Length);
+                        var buffer = new byte[decomLengthBuffer.Length + comBufferLength];
+                        decomLengthBuffer.CopyTo(buffer, 0);
+                        comBuffer.CopyTo(buffer, decomLengthBuffer.Length);
                         
-                        queueIn.Enqueue(comBuffer);
+                        queueIn.Enqueue(buffer);
                     }
                     queueIn.Stop();
                 }
@@ -61,11 +60,11 @@ namespace archiver
                     {
                         using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
                         {
-                            var bufferLength = gZipStream.Read(decomBuffer, 0, decomLength);
-                            var blockOut = new Block(blockIn.Id, decomBuffer);
-                            queueOut.Enqueue(blockOut);
+                            gZipStream.Read(decomBuffer, 0, decomLength);
                         }
                     }
+                    var blockOut = new Block(blockIn.Id, decomBuffer);
+                    queueOut.Enqueue(blockOut);
                 }
             }
             catch (Exception ex)

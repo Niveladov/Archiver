@@ -20,7 +20,7 @@ namespace archiver
                     var buffer = new byte[sourceStream.Length % DATA_PORTION_SIZE];
                     while (sourceStream.Position < sourceStream.Length)
                     {
-                        var length = sourceStream.Read(buffer, 0, buffer.Length);
+                        sourceStream.Read(buffer, 0, buffer.Length);
                         queueIn.Enqueue(buffer);
                         buffer = new byte[DATA_PORTION_SIZE];
                     }
@@ -39,6 +39,7 @@ namespace archiver
             {
                 while (!isCancel)
                 {
+                    byte[] comBuffer = null;
                     var blockIn = queueIn.Dequeue();
                     if (blockIn == null) return;
                     using (var memoryStream = new MemoryStream())
@@ -46,17 +47,18 @@ namespace archiver
                         using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
                         {
                             gZipStream.Write(blockIn.Buffer, 0, blockIn.Buffer.Length);
-                            var comBuffer = memoryStream.ToArray();
-                            var decomBufferLengthArray = BitConverter.GetBytes(blockIn.Buffer.Length);
-                            var comBufferLengthArray = BitConverter.GetBytes(comBuffer.Length);
-                            var fullBuffer = new byte[comBuffer.Length + comBufferLengthArray.Length + decomBufferLengthArray.Length];
-                            decomBufferLengthArray.CopyTo(fullBuffer, 0);
-                            comBufferLengthArray.CopyTo(fullBuffer, decomBufferLengthArray.Length);
-                            comBuffer.CopyTo(fullBuffer, decomBufferLengthArray.Length + comBufferLengthArray.Length);
-                            var blockOut = new Block(blockIn.Id, comBuffer);
-                            queueOut.Enqueue(blockOut);
                         }
+                        comBuffer = memoryStream.ToArray();
                     }
+                    var decomBufferLengthArray = BitConverter.GetBytes(blockIn.Buffer.Length);
+                    var comBufferLengthArray = BitConverter.GetBytes(comBuffer.Length);
+                    var fullBuffer = new byte[comBuffer.Length + comBufferLengthArray.Length + decomBufferLengthArray.Length];
+                    decomBufferLengthArray.CopyTo(fullBuffer, 0);
+                    comBufferLengthArray.CopyTo(fullBuffer, decomBufferLengthArray.Length);
+                    comBuffer.CopyTo(fullBuffer, decomBufferLengthArray.Length + comBufferLengthArray.Length);
+                    var blockOut = new Block(blockIn.Id, fullBuffer);
+                    queueOut.Enqueue(blockOut);
+
                 }
             }
             catch (Exception ex)
@@ -75,7 +77,6 @@ namespace archiver
                     {
                         var block = queueOut.Dequeue();
                         if (block == null) return;
-                        //BitConverter.GetBytes(block.Buffer.Length).CopyTo(block.Buffer, SYSTEM_DATA_START_POSITION);
                         targetStream.Write(block.Buffer, 0, block.Buffer.Length);
                     }
                 }

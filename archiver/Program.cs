@@ -4,31 +4,63 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace archiver
 {
     class Program
     {
-        private static Archiver _archiver = new DecompressionArchiver(@"F:/MyProjects/IMG.gz", @"F:/MyProjects/IMG_n.jpg");
-        //protected string sourceFile { get; } = @"F:/MyProjects/models.cs";
-        //protected string compressedFile { get; } = @"F:/MyProjects/models.gz";
-        //protected string targetFile { get; } = @"F:/MyProjects/models_new.cs";
-        //protected string _sourceFile = @"D:/Niveladov/models.txt";
-        //protected string _compressedFile = @"D:/Niveladov/models.gz";
-        //protected string _targetFile = @"D:/Niveladov/models_new.txt";
+        private const string COMPRESS_MODE = "compress";
+        private const string DECOMPRESS_MODE = "decompress";
+        private const string FILENAME_PATTERN = @"\w+\";
+
+        private static string _mode;
+        private static string _sourceFile;
+        private static string _targetFile;
+
+        private static Archiver _archiver; /*= new DecompressionArchiver(@"F:/MyProjects/IMG.gz", @"F:/MyProjects/IMG_NEW.jpg");*/
+
+        private static bool _isValid
+        {
+            get
+            {
+                return (_mode.ToLower().Equals(COMPRESS_MODE) || _mode.ToLower().Equals(DECOMPRESS_MODE))
+                    && File.Exists(_sourceFile) && Regex.IsMatch(_targetFile, FILENAME_PATTERN);
+            }
+        }
 
         private static void Main(string[] args)
         {
-            //var i = 1000000;
-            //var a = new byte[8];
-            //var b = BitConverter.GetBytes(i);
-            //b.CopyTo(a, 4);
-            //var c = BitConverter.ToInt32(a, 4); 
-            _archiver.Run();
-            Console.ReadLine();
+            if (args.Length == 3)
+            {
+                _mode = args[0];
+                _sourceFile = args[1];
+                _targetFile = args[2];
+                if (_isValid)
+                {
+                    switch(_mode.ToLower())
+                    {
+                        case COMPRESS_MODE:
+                            _archiver = new CompressionArchiver(_sourceFile, _targetFile);
+                            break;
+                        case DECOMPRESS_MODE:
+                            _archiver = new DecompressionArchiver(_sourceFile, _targetFile);
+                            break;
+                    }
+                    _archiver.Run();
+                    Console.ReadLine();
+                }
+                else
+                {
+                    Console.WriteLine("Ошибка входных данных!");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Неверное количество входных параметров!");
+            }
         }
-
 
     }
 }

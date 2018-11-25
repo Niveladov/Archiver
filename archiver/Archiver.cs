@@ -8,9 +8,7 @@ namespace archiver
 {
     internal abstract class Archiver
     {
-        //protected const int SYSTEM_DATA_LENGTH = 8;
-        protected const int SYSTEM_DATA_START_POSITION = 4;
-        protected const int DATA_PORTION_SIZE = 1000000;
+        protected const int DATA_PORTION_SIZE = 1000000; // 1 Мб
 
         private int _pocessorCount = Environment.ProcessorCount;
         
@@ -28,9 +26,10 @@ namespace archiver
 
         public void Run()
         {
+            Console.WriteLine("Ждите, идёт работа...");
+
             var readingThread = new Thread(ReadFromFile);
             readingThread.Start();
-            Console.WriteLine("Погнали!!!♦♦♦♦♦");
 
             var threadPool = new Thread[_pocessorCount];
             for (int i = 0; i < _pocessorCount; i++)
@@ -39,14 +38,13 @@ namespace archiver
                 threadPool[i].Start();
             }
 
-            Console.WriteLine("Ждём-с!!!");
-            threadPool.WaitAll();
+            var writingThread = new Thread(WriteToFile);
+            writingThread.Start(); 
 
+            threadPool.WaitAll();
             queueOut.Stop();
 
-            WriteToFile();
-
-            Console.WriteLine("Усё!!!");
+            Console.WriteLine("Завершено!");
         }
 
         protected abstract void ReadFromFile();
