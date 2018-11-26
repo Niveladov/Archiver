@@ -18,7 +18,7 @@ namespace archiver
                 using (var sourceStream = new FileStream(sourceFile, FileMode.OpenOrCreate))
                 {
                     var buffer = new byte[sourceStream.Length % DATA_PORTION_SIZE];
-                    while (sourceStream.Position < sourceStream.Length)
+                    while (sourceStream.Position < sourceStream.Length && !isCancel)
                     {
                         sourceStream.Read(buffer, 0, buffer.Length);
                         queueIn.Enqueue(buffer);

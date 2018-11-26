@@ -45,6 +45,7 @@ namespace archiver
                 _targetFile = args[2];
                 if (_isValid)
                 {
+                    Console.CancelKeyPress += Console_CancelKeyPress;
                     switch(_mode.ToLower())
                     {
                         case COMPRESS_MODE:
@@ -68,6 +69,14 @@ namespace archiver
             }
         }
 
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            if (e.SpecialKey == ConsoleSpecialKey.ControlC)
+            {
+                Console.WriteLine("Отмена работы...");
+                _archiver.Cancel();
+            }
+        }
     }
 }
 

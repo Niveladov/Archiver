@@ -24,6 +24,11 @@ namespace archiver
             this.targetFile = targetFile;
         }
 
+        public void Cancel()
+        {
+            isCancel = true;
+        }
+
         public void Run()
         {
             Console.WriteLine("Ждите, идёт работа...");

@@ -19,7 +19,7 @@ namespace archiver
                 {
                     var decomLengthBuffer = new byte[4];
                     var comLengthBuffer = new byte[4];
-                    while (sourceStream.Position < sourceStream.Length)
+                    while (sourceStream.Position < sourceStream.Length && !isCancel)
                     {
                         sourceStream.Read(decomLengthBuffer, 0, decomLengthBuffer.Length);
 
