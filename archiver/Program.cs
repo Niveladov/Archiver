@@ -19,7 +19,7 @@ namespace archiver
         private static string _sourceFile;
         private static string _targetFile;
 
-        private static Archiver _archiver; /*= new DecompressionArchiver(@"F:/MyProjects/IMG.gz", @"F:/MyProjects/IMG_NEW.jpg");*/
+        private static Archiver _archiver;
 
         private static bool _isValid
         {

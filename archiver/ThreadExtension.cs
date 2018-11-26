@@ -8,17 +8,6 @@ namespace archiver
 {
     public static class ThreadExtension
     {
-        //public static void StartAll(this IEnumerable<Thread> threads)
-        //{
-        //    if (threads != null)
-        //    {
-        //        foreach (var thread in threads)
-        //        {
-        //            thread.Start();
-        //        }
-        //    }
-        //}
-
         public static void WaitAll(this IEnumerable<Thread> threads)
         {
             if (threads != null)

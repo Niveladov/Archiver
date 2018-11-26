@@ -29,13 +29,13 @@ namespace archiver
         {
             if (block == null)
             {
-                throw new ArgumentNullException("_block");
+                throw new ArgumentNullException("block");
             }
             lock (_locker)
             {
                 if (_isStoped)
                 {
-                    throw new InvalidOperationException("Queue already stopped");
+                    throw new InvalidOperationException("Очередь уже остановлена");
                 }
                 while (_expectedBlockId != block.Id)
                 {
@@ -51,13 +51,13 @@ namespace archiver
         {
             if (buffer == null)
             {
-                throw new ArgumentNullException("_block");
+                throw new ArgumentNullException("block");
             }
             lock (_locker)
             {
                 if (_isStoped)
                 {
-                    throw new InvalidOperationException("Queue already stopped");
+                    throw new InvalidOperationException("Очередь уже остановлена");
                 }
                 var block = new Block(_expectedBlockId, buffer);
                 _queue.Enqueue(block);
