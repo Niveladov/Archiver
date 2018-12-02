@@ -17,12 +17,19 @@ namespace archiver
             {
                 using (var sourceStream = new FileStream(sourceFile, FileMode.OpenOrCreate))
                 {
-                    var buffer = new byte[sourceStream.Length % DATA_PORTION_SIZE];
+                    byte[] buffer = null;
                     while (sourceStream.Position < sourceStream.Length && !isCancel)
                     {
+                        if (sourceStream.Length - sourceStream.Position < DATA_PORTION_SIZE)
+                        {
+                            buffer = new byte[(int)(sourceStream.Length - sourceStream.Position)];
+                        }
+                        else
+                        {
+                            buffer = new byte[DATA_PORTION_SIZE];
+                        }
                         sourceStream.Read(buffer, 0, buffer.Length);
                         queueIn.Enqueue(buffer);
-                        buffer = new byte[DATA_PORTION_SIZE];
                     }
                     queueIn.Stop();
                 }
@@ -50,16 +57,10 @@ namespace archiver
                             gZipStream.Write(blockIn.Buffer, 0, blockIn.Buffer.Length);
                         }
                         comBuffer = memoryStream.ToArray();
-                    }
-                    var decomBufferLengthArray = BitConverter.GetBytes(blockIn.Buffer.Length);
-                    var comBufferLengthArray = BitConverter.GetBytes(comBuffer.Length);
-                    var fullBuffer = new byte[comBuffer.Length + comBufferLengthArray.Length + decomBufferLengthArray.Length];
-                    decomBufferLengthArray.CopyTo(fullBuffer, 0);
-                    comBufferLengthArray.CopyTo(fullBuffer, decomBufferLengthArray.Length);
-                    comBuffer.CopyTo(fullBuffer, decomBufferLengthArray.Length + comBufferLengthArray.Length);
-                    var blockOut = new Block(blockIn.Id, fullBuffer);
+                    }                    
+                    BitConverter.GetBytes(comBuffer.Length).CopyTo(comBuffer, 4);
+                    var blockOut = new Block(blockIn.Id, comBuffer);
                     queueOut.Enqueue(blockOut);
-
                 }
             }
             catch (Exception ex)

@@ -17,23 +17,17 @@ namespace archiver
             {
                 using (var sourceStream = new FileStream(sourceFile, FileMode.Open))
                 {
-                    var decomLengthBuffer = new byte[4];
-                    var comLengthBuffer = new byte[4];
+                    var lengthBuffer = new byte[8];
                     while (sourceStream.Position < sourceStream.Length && !isCancel)
                     {
-                        sourceStream.Read(decomLengthBuffer, 0, decomLengthBuffer.Length);
-
-                        sourceStream.Read(comLengthBuffer, 0, comLengthBuffer.Length);
-                        var comBufferLength = BitConverter.ToInt32(comLengthBuffer, 0);
+                        sourceStream.Read(lengthBuffer, 0, lengthBuffer.Length);
+                        var comBufferLength = BitConverter.ToInt32(lengthBuffer, 4);
                         
                         var comBuffer = new byte[comBufferLength];
-                        sourceStream.Read(comBuffer, 0, comBuffer.Length);
-
-                        var buffer = new byte[decomLengthBuffer.Length + comBufferLength];
-                        decomLengthBuffer.CopyTo(buffer, 0);
-                        comBuffer.CopyTo(buffer, decomLengthBuffer.Length);
+                        lengthBuffer.Take(4).ToArray().CopyTo(comBuffer, 0);
+                        sourceStream.Read(comBuffer, 8, comBuffer.Length - 8);
                         
-                        queueIn.Enqueue(buffer);
+                        queueIn.Enqueue(comBuffer);
                     }
                     queueIn.Stop();
                 }
@@ -53,18 +47,24 @@ namespace archiver
                 {
                     var blockIn = queueIn.Dequeue();
                     if (blockIn == null) return;
-                    var lengthDataBuffer = new byte[4];
-                    blockIn.Buffer.Take(4).ToArray().CopyTo(lengthDataBuffer, 0);
-                    var decomLength = BitConverter.ToInt32(lengthDataBuffer, 0);
-                    var decomBuffer = new byte[decomLength];
-                    using (var memoryStream = new MemoryStream(blockIn.Buffer.Skip(4).ToArray()))
+                    var decomBuffer = new byte[DATA_PORTION_SIZE];
+                    int readedData = 0;
+                    Block blockOut = null;
+                    using (var memoryStream = new MemoryStream(blockIn.Buffer))
                     {
                         using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
                         {
-                            gZipStream.Read(decomBuffer, 0, decomLength);
+                            readedData = gZipStream.Read(decomBuffer, 0, decomBuffer.Length);
                         }
                     }
-                    var blockOut = new Block(blockIn.Id, decomBuffer);
+                    if (readedData < DATA_PORTION_SIZE)
+                    {
+                        blockOut = new Block(blockIn.Id, decomBuffer.Take(readedData).ToArray());
+                    }
+                    else
+                    {
+                        blockOut = new Block(blockIn.Id, decomBuffer);
+                    }
                     queueOut.Enqueue(blockOut);
                 }
             }
