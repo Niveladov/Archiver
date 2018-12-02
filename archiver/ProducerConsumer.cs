@@ -23,7 +23,14 @@ namespace archiver
         private object _locker = new object();
         private bool _isStoped = false;
         private int _expectedBlockId = 1;
+        private int _countLimit;
+        private bool _isFull = false;
         private Queue<Block> _queue = new Queue<Block>();
+
+        public ProducerConsumer(int countLimit)
+        {
+            _countLimit = countLimit;
+        }
 
         public void Enqueue(Block block)
         {
@@ -39,6 +46,11 @@ namespace archiver
                 }
                 while (_expectedBlockId != block.Id)
                 {
+                    Monitor.Wait(_locker);
+                }
+                while (_queue.Count >= _countLimit)
+                {
+                    _isFull = true;
                     Monitor.Wait(_locker);
                 }
                 _queue.Enqueue(block);
@@ -59,6 +71,11 @@ namespace archiver
                 {
                     throw new InvalidOperationException("Очередь уже остановлена");
                 }
+                while (_queue.Count >= _countLimit)
+                {
+                    _isFull = true;
+                    Monitor.Wait(_locker);
+                }
                 var block = new Block(_expectedBlockId, buffer);
                 _queue.Enqueue(block);
                 _expectedBlockId++;
@@ -75,7 +92,13 @@ namespace archiver
                     Monitor.Wait(_locker);
                 }
                 if (_queue.Count == 0) return null;
-                return _queue.Dequeue();
+                var block = _queue.Dequeue();
+                if (_isFull)
+                {
+                    _isFull = false;
+                    Monitor.Pulse(_locker);
+                }
+                return block;
             }
         }
 

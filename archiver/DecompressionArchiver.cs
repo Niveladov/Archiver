@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
 
 namespace archiver
 {
@@ -47,7 +45,7 @@ namespace archiver
                 {
                     var blockIn = queueIn.Dequeue();
                     if (blockIn == null) return;
-                    var decomBuffer = new byte[DATA_PORTION_SIZE];
+                    var decomBuffer = new byte[Program.DATA_PORTION_SIZE];
                     int readedData = 0;
                     Block blockOut = null;
                     using (var memoryStream = new MemoryStream(blockIn.Buffer))
@@ -57,7 +55,7 @@ namespace archiver
                             readedData = gZipStream.Read(decomBuffer, 0, decomBuffer.Length);
                         }
                     }
-                    if (readedData < DATA_PORTION_SIZE)
+                    if (readedData < Program.DATA_PORTION_SIZE)
                     {
                         blockOut = new Block(blockIn.Id, decomBuffer.Take(readedData).ToArray());
                     }

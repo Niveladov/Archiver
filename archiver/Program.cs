@@ -1,60 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
 
 namespace archiver
 {
     class Program
     {
-        private const string COMPRESS_MODE = "compress";
-        private const string DECOMPRESS_MODE = "decompress";
-        private const string FILENAME_PATTERN = @"\w+\.\w+";
+        internal static int DATA_PORTION_SIZE = 1000000; // 1 Мб
 
-        private static string _mode;
-        private static string _sourceFile;
-        private static string _targetFile;
-
+        private const int RATIO = 3;
         private static Archiver _archiver;
-
-        private static bool _isValid
-        {
-            get
-            {
-                return (_mode.ToLower().Equals(COMPRESS_MODE) || _mode.ToLower().Equals(DECOMPRESS_MODE))
-                    && File.Exists(_sourceFile) && Regex.IsMatch(_targetFile, FILENAME_PATTERN);
-            }
-        }
 
         private static void Main(string[] args)
         {
 #if DEBUG
             args = new string[3];
-            args[0] = "decompress";
-            args[1] = @"F:/MyProjects/IMG.gz";
-            args[2] = @"F:/MyProjects/IMG_NEW.jpg";
+            args[0] = "compress";
+            args[1] = @"F:/MyProjects/IMG.jpg";
+            args[2] = @"F:/MyProjects/IMG.gz";
 #endif
             if (args.Length == 3)
             {
-                _mode = args[0];
-                _sourceFile = args[1];
-                _targetFile = args[2];
-                if (_isValid)
+                var inputData = new InputData(args[0], args[1], args[2]);
+                if (inputData.IsValid)
                 {
                     Console.CancelKeyPress += Console_CancelKeyPress;
-                    switch(_mode.ToLower())
-                    {
-                        case COMPRESS_MODE:
-                            _archiver = new CompressionArchiver(_sourceFile, _targetFile);
-                            break;
-                        case DECOMPRESS_MODE:
-                            _archiver = new DecompressionArchiver(_sourceFile, _targetFile);
-                            break;
-                    }
+                    _archiver = inputData.GetArchiver();
                     _archiver.Run();
                     Console.ReadLine();
                 }
@@ -76,6 +45,13 @@ namespace archiver
                 Console.WriteLine("Отмена работы...");
                 _archiver.Cancel();
             }
+        }
+
+        public static int GetQueueLimit()
+        {
+            var totalMemory = new Microsoft.VisualBasic.Devices.ComputerInfo().TotalPhysicalMemory;
+            var memoryForOneBlock = (ulong)(DATA_PORTION_SIZE * RATIO);
+            return (int)(totalMemory / memoryForOneBlock);
         }
     }
 }

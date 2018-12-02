@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
 
 namespace archiver
 {
@@ -20,13 +17,13 @@ namespace archiver
                     byte[] buffer = null;
                     while (sourceStream.Position < sourceStream.Length && !isCancel)
                     {
-                        if (sourceStream.Length - sourceStream.Position < DATA_PORTION_SIZE)
+                        if (sourceStream.Length - sourceStream.Position < Program.DATA_PORTION_SIZE)
                         {
                             buffer = new byte[(int)(sourceStream.Length - sourceStream.Position)];
                         }
                         else
                         {
-                            buffer = new byte[DATA_PORTION_SIZE];
+                            buffer = new byte[Program.DATA_PORTION_SIZE];
                         }
                         sourceStream.Read(buffer, 0, buffer.Length);
                         queueIn.Enqueue(buffer);

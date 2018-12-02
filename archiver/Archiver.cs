@@ -8,12 +8,10 @@ namespace archiver
 {
     internal abstract class Archiver
     {
-        protected const int DATA_PORTION_SIZE = 1000000; // 1 Мб
-
         private int _pocessorCount = Environment.ProcessorCount;
         
-        protected ProducerConsumer queueIn { get; } = new ProducerConsumer();
-        protected ProducerConsumer queueOut { get; } = new ProducerConsumer();
+        protected ProducerConsumer queueIn { get; } = new ProducerConsumer(Program.GetQueueLimit());
+        protected ProducerConsumer queueOut { get; } = new ProducerConsumer(Program.GetQueueLimit());
         protected string sourceFile { get; }
         protected string targetFile { get; }
         protected bool isCancel { get; set; } = false;
