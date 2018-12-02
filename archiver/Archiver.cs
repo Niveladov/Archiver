@@ -49,7 +49,14 @@ namespace archiver
             threadPool.WaitAll();
             queueOut.Stop();
 
-            Console.WriteLine("Завершено!");
+            if (!isCancel)
+            {
+                Console.WriteLine("Успешно завершено!");
+            }
+            else
+            {
+                Console.WriteLine("Завершено! Работа не выполнена!");
+            }
         }
 
         protected abstract void ReadFromFile();
