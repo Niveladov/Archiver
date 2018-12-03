@@ -10,8 +10,8 @@ namespace archiver
     {
         private int _pocessorCount = Environment.ProcessorCount;
         
-        protected ProducerConsumer queueIn { get; } = new ProducerConsumer(Program.GetQueueLimit());
-        protected ProducerConsumer queueOut { get; } = new ProducerConsumer(Program.GetQueueLimit());
+        protected ProducerConsumer queueIn { get; } 
+        protected ProducerConsumer queueOut { get; }
         protected string sourceFile { get; }
         protected string targetFile { get; }
         protected bool isCancel { get; set; } = false;
@@ -20,6 +20,9 @@ namespace archiver
         {
             this.sourceFile = sourceFile;
             this.targetFile = targetFile;
+            var queueLimit = Program.GetQueueLimit();
+            queueIn = new ProducerConsumer(queueLimit);
+            queueOut = new ProducerConsumer(queueLimit);
         }
 
         public void Cancel()
